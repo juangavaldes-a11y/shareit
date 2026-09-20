@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: Launch API",
+      "type": "pwa-node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/server.js",
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Frontend: Launch Dev Server",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "VITE v.*ready in.*\\n\\s*➜\\s+Local:\\s+(https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      },
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Full App",
+      "configurations": ["Backend: Launch API", "Frontend: Launch Dev Server"]
+    }
+  ]
+}

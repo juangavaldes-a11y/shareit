@@ -1,0 +1,72 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shareit_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shareit
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d shareit']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: shareit_backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      CORS_ORIGIN: http://localhost:3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shareit
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_LOGGING: 'false'
+      JWT_SECRET: change-me-in-production
+      JWT_EXPIRES_IN: 1d
+    ports:
+      - '4000:4000'
+
+  migrate:
+    build:
+      context: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shareit
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_LOGGING: 'false'
+      CORS_ORIGIN: http://localhost:3000
+      JWT_SECRET: change-me-in-development
+    command: ['npm', 'run', 'db:migrate']
+    restart: 'no'
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:4000/api/v1
+    container_name: shareit_frontend
+    depends_on:
+      - backend
+    ports:
+      - '3000:80'
+
+volumes:
+  postgres_data:

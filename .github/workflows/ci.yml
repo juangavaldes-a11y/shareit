@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: ['main', 'master']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shareit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d shareit_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: shareit_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_LOGGING: 'false'
+      JWT_SECRET: ci-secret
+      JWT_EXPIRES_IN: 1d
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run migrations
+        run: npm run db:migrate
+        working-directory: backend
+
+      - name: Seed database
+        run: npm run db:seed:all
+        working-directory: backend
+
+      - name: Run backend integration tests
+        run: npm test
+        working-directory: backend
+
+      - name: Smoke load backend app
+        run: node -e "require('./src/app'); console.log('backend app loaded')"
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build compose services
+        run: docker compose build
