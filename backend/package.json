@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "admin:bootstrap": "node src/scripts/bootstrap-admin.js",
     "test": "node --test tests/api.integration.test.js",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-exclude=\"src/server.js\" --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 \"tests/unit/*.test.js\"",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:migrate:undo:all": "sequelize-cli db:migrate:undo:all",

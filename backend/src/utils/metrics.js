@@ -29,7 +29,8 @@ const observeRequest = (req, res, next) => {
   const startedAt = process.hrtime.bigint();
 
   res.on('finish', () => {
-    if (req.path === '/api/v1/metrics') {
+    // req.path is relative to the mount point here, so match on the full original URL.
+    if (req.originalUrl.split('?')[0] === '/api/v1/metrics') {
       return;
     }
 
